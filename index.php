@@ -159,7 +159,97 @@
             color: #d4611f;
         }
 
-        /* Model Filter Styles */
+        /* Model Search Box */
+        .model-search-box {
+            background: #fff;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .model-search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .model-search-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .model-search-title svg {
+            color: #2196f3;
+        }
+
+        .model-search-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .model-search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 18px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .model-search-input:focus {
+            border-color: #2196f3;
+        }
+
+        .model-search-btn {
+            padding: 12px 25px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .model-search-btn:hover {
+            background: #1976d2;
+        }
+
+        .model-search-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .model-search-clear {
+            padding: 12px 20px;
+            background: #f5f5f5;
+            color: #666;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .model-search-clear:hover {
+            background: #eee;
+            border-color: #ccc;
+        }
+
+        /* Model Filter Active Styles */
         .model-filter-box {
             background: #e3f2fd;
             border: 2px solid #2196f3;
@@ -802,7 +892,31 @@
 
                     echo '<div class="pages-info">Loaded ' . $pagesLoaded . ' pages from Daraz</div>';
 
-                    // Model Filter Box (hidden by default)
+                    // Model Search Input Box
+                    echo '<div class="model-search-box">
+                            <div class="model-search-header">
+                                <span class="model-search-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="M21 21l-4.35-4.35"></path>
+                                    </svg>
+                                    Search by Model / Product Name
+                                </span>
+                            </div>
+                            <div class="model-search-container">
+                                <input type="text" id="modelSearchInput" class="model-search-input" placeholder="Enter model number or product name (e.g., NA120/00, iPhone 15, RTX 4090...)">
+                                <button type="button" class="model-search-btn" onclick="searchByModel()">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="M21 21l-4.35-4.35"></path>
+                                    </svg>
+                                    Find Products
+                                </button>
+                                <button type="button" class="model-search-clear" onclick="clearModelFilter()">Clear</button>
+                            </div>
+                          </div>';
+
+                    // Model Filter Box (hidden by default - shows when filter is active)
                     echo '<div class="model-filter-box" id="modelFilterBox">
                             <div class="model-filter-content">
                                 <div class="model-filter-info">
@@ -1107,7 +1221,44 @@
         // Current model filter
         var currentModelFilter = null;
 
-        // Find Similar Products function
+        // Model search input
+        var modelSearchInput = document.getElementById('modelSearchInput');
+
+        // Search by model number/text from input
+        function searchByModel() {
+            var searchText = modelSearchInput?.value?.trim();
+
+            if (!searchText) {
+                alert('Please enter a model number or product name to search');
+                return;
+            }
+
+            currentModelFilter = searchText.toLowerCase();
+
+            // Show model filter box
+            var filterBox = document.getElementById('modelFilterBox');
+            var filterName = document.getElementById('modelFilterName');
+            if (filterBox) filterBox.classList.add('show');
+            if (filterName) filterName.textContent = searchText;
+
+            // Apply combined filters
+            applyAllFilters();
+
+            // Scroll to filter box
+            document.getElementById('modelFilterBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Allow Enter key in model search input
+        if (modelSearchInput) {
+            modelSearchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchByModel();
+                }
+            });
+        }
+
+        // Find Similar Products function (from button click)
         function findSimilarProducts(button) {
             var modelKeywords = button.getAttribute('data-model');
             var productName = button.getAttribute('data-name');
@@ -1115,6 +1266,11 @@
             if (!modelKeywords) return;
 
             currentModelFilter = modelKeywords.toLowerCase();
+
+            // Update the search input with the model keywords
+            if (modelSearchInput) {
+                modelSearchInput.value = modelKeywords;
+            }
 
             // Show model filter box
             var filterBox = document.getElementById('modelFilterBox');
@@ -1132,6 +1288,11 @@
         // Clear model filter
         function clearModelFilter() {
             currentModelFilter = null;
+
+            // Clear the search input
+            if (modelSearchInput) {
+                modelSearchInput.value = '';
+            }
 
             var filterBox = document.getElementById('modelFilterBox');
             if (filterBox) filterBox.classList.remove('show');
@@ -1162,19 +1323,33 @@
                 var modelMatch = true;
 
                 if (currentModelFilter) {
-                    // Check if model keywords match
-                    var filterWords = currentModelFilter.split(/\s+/).filter(function(w) { return w.length > 2; });
-                    var matchCount = 0;
+                    // Split search into words (keep words with 2+ chars)
+                    var filterWords = currentModelFilter.split(/\s+/).filter(function(w) { return w.length >= 2; });
+                    var searchText = model + ' ' + name;
 
-                    filterWords.forEach(function(word) {
-                        if (model.indexOf(word) !== -1 || name.indexOf(word) !== -1) {
-                            matchCount++;
+                    // Check for exact phrase match first
+                    var exactMatch = searchText.indexOf(currentModelFilter) !== -1;
+
+                    if (exactMatch) {
+                        modelMatch = true;
+                    } else {
+                        // Count matching words
+                        var matchCount = 0;
+                        filterWords.forEach(function(word) {
+                            if (searchText.indexOf(word) !== -1) {
+                                matchCount++;
+                            }
+                        });
+
+                        // For single word/model number: require that word to match
+                        // For multiple words: require at least 1 word to match (or 50% for many words)
+                        if (filterWords.length <= 2) {
+                            modelMatch = matchCount >= 1;
+                        } else {
+                            var requiredMatches = Math.max(1, Math.floor(filterWords.length * 0.4));
+                            modelMatch = matchCount >= requiredMatches;
                         }
-                    });
-
-                    // Require at least 50% of keywords to match, minimum 2
-                    var requiredMatches = Math.max(2, Math.floor(filterWords.length * 0.5));
-                    modelMatch = matchCount >= requiredMatches;
+                    }
 
                     // Highlight matching products
                     if (modelMatch) {
