@@ -159,6 +159,77 @@
             color: #d4611f;
         }
 
+        /* Model Filter Styles */
+        .model-filter-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .model-filter-box.show {
+            display: block;
+        }
+
+        .model-filter-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .model-filter-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .model-filter-icon {
+            background: #2196f3;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .model-filter-text {
+            color: #1565c0;
+        }
+
+        .model-filter-text strong {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+        }
+
+        .model-filter-text span {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .model-filter-close {
+            background: #1565c0;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+
+        .model-filter-close:hover {
+            background: #0d47a1;
+        }
+
         /* Range Slider Styles */
         .range-slider-container {
             margin-bottom: 25px;
@@ -404,6 +475,11 @@
             display: none;
         }
 
+        .product-card.highlighted {
+            border: 3px solid #2196f3;
+            box-shadow: 0 5px 25px rgba(33, 150, 243, 0.3);
+        }
+
         .discount-badge {
             position: absolute;
             top: 15px;
@@ -575,6 +651,57 @@
             font-weight: 700;
         }
 
+        /* Find Similar Button */
+        .product-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        .find-similar-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .find-similar-btn:hover {
+            background: #2196f3;
+            color: white;
+            border-color: #2196f3;
+        }
+
+        .find-similar-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .seller-name {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .seller-name svg {
+            width: 12px;
+            height: 12px;
+        }
+
         @media (max-width: 600px) {
             h1 {
                 font-size: 1.8rem;
@@ -610,6 +737,15 @@
             }
 
             .price-stats {
+                justify-content: center;
+            }
+
+            .model-filter-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .model-filter-info {
                 justify-content: center;
             }
         }
@@ -666,6 +802,27 @@
 
                     echo '<div class="pages-info">Loaded ' . $pagesLoaded . ' pages from Daraz</div>';
 
+                    // Model Filter Box (hidden by default)
+                    echo '<div class="model-filter-box" id="modelFilterBox">
+                            <div class="model-filter-content">
+                                <div class="model-filter-info">
+                                    <div class="model-filter-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="M21 21l-4.35-4.35"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="model-filter-text">
+                                        <strong>Filtering by Similar Products</strong>
+                                        <span id="modelFilterName">-</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="model-filter-close" onclick="clearModelFilter()">
+                                    Show All Products
+                                </button>
+                            </div>
+                          </div>';
+
                     // Price Filter Box with Range Slider
                     echo '<div class="filter-box">
                             <div class="filter-header">
@@ -715,13 +872,13 @@
 
                     echo '<div class="results-info">
                             <span class="results-count">Found <span id="totalCount">' . count($products) . '</span> products</span>
-                            <span class="filtered-count" id="filteredCount" style="display:none;">Showing <span id="visibleCount">0</span> products in price range</span>
+                            <span class="filtered-count" id="filteredCount" style="display:none;">Showing <span id="visibleCount">0</span> products</span>
                             <span class="sort-info">Sorted by highest discount %</span>
                           </div>';
 
                     echo '<div class="no-filter-results" id="noFilterResults">
-                            <h3>No products in this price range</h3>
-                            <p>Try adjusting the min/max values</p>
+                            <h3>No products match the current filters</h3>
+                            <p>Try adjusting the price range or clearing the model filter</p>
                           </div>';
 
                     echo '<div class="results-grid" id="productsGrid">';
@@ -733,17 +890,22 @@
                         $currentPrice = $product['price'];
                         $originalPrice = $product['originalPrice'];
                         $savings = $originalPrice - $currentPrice;
+                        $productName = htmlspecialchars($product['name']);
+                        $sellerName = htmlspecialchars($product['seller'] ?? '');
 
-                        echo '<div class="product-card" data-price="' . $currentPrice . '">';
+                        // Extract model keywords (alphanumeric patterns like model numbers)
+                        $modelKeywords = extractModelKeywords($product['name']);
+
+                        echo '<div class="product-card" data-price="' . $currentPrice . '" data-name="' . $productName . '" data-model="' . htmlspecialchars($modelKeywords) . '">';
                         if ($rank <= 10) {
                             echo '<div class="rank-badge">#' . $rank . '</div>';
                         }
                         if ($discount > 0) {
                             echo '<div class="discount-badge ' . $discountClass . '">' . $discount . '% OFF</div>';
                         }
-                        echo '<img src="' . htmlspecialchars($product['image']) . '" alt="' . htmlspecialchars($product['name']) . '" class="product-image" loading="lazy">';
+                        echo '<img src="' . htmlspecialchars($product['image']) . '" alt="' . $productName . '" class="product-image" loading="lazy">';
                         echo '<div class="product-info">';
-                        echo '<h3 class="product-name"><a href="' . htmlspecialchars($product['url']) . '" target="_blank">' . htmlspecialchars($product['name']) . '</a></h3>';
+                        echo '<h3 class="product-name"><a href="' . htmlspecialchars($product['url']) . '" target="_blank">' . $productName . '</a></h3>';
                         echo '<div class="price-section">';
                         echo '<span class="current-price">৳' . number_format($currentPrice) . '</span>';
                         if ($originalPrice > $currentPrice) {
@@ -765,6 +927,14 @@
                         if (!empty($product['sold'])) {
                             echo '<div class="sold-info">' . htmlspecialchars($product['sold']) . '</div>';
                         }
+                        if (!empty($sellerName)) {
+                            echo '<div class="seller-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>' . $sellerName . '</div>';
+                        }
+                        echo '<div class="product-actions">';
+                        echo '<button type="button" class="find-similar-btn" onclick="findSimilarProducts(this)" data-model="' . htmlspecialchars($modelKeywords) . '" data-name="' . $productName . '">';
+                        echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>';
+                        echo 'Find Same Model</button>';
+                        echo '</div>';
                         echo '</div></div>';
                         $rank++;
                     }
@@ -777,6 +947,33 @@
                         var originalMaxPrice = ' . ceil($maxPrice) . ';
                     </script>';
                 }
+            }
+
+            function extractModelKeywords($name) {
+                // Extract model numbers and important identifiers
+                // Patterns like: NA120/00, SM-A235F, iPhone 15, RTX 4090, etc.
+                $patterns = [];
+
+                // Match alphanumeric model patterns (letters + numbers combinations)
+                preg_match_all('/[A-Z]{1,5}[-]?[0-9]{2,}[A-Z0-9\/\-]*/i', $name, $matches);
+                $patterns = array_merge($patterns, $matches[0]);
+
+                // Match patterns like "Series 1000", "Pro Max", etc.
+                preg_match_all('/(?:Series|Pro|Max|Plus|Ultra|Mini|Lite)\s*\d*/i', $name, $matches);
+                $patterns = array_merge($patterns, $matches[0]);
+
+                // Match capacity/size patterns like "128GB", "1TB", "65 inch"
+                preg_match_all('/\d+\s*(?:GB|TB|MB|inch|"/i', $name, $matches);
+                $patterns = array_merge($patterns, $matches[0]);
+
+                // Get first few significant words (brand + model usually)
+                $words = preg_split('/\s+/', $name);
+                $significantWords = array_slice($words, 0, 4);
+
+                $allKeywords = array_merge($patterns, $significantWords);
+                $allKeywords = array_unique(array_filter($allKeywords));
+
+                return implode(' ', $allKeywords);
             }
 
             function searchDaraz($query, $pagesToFetch = 5) {
@@ -861,7 +1058,8 @@
                                     'url' => $productUrl,
                                     'rating' => floatval($item['ratingScore'] ?? 0),
                                     'reviews' => $item['review'] ?? '',
-                                    'sold' => $item['itemSoldCntShow'] ?? ''
+                                    'sold' => $item['itemSoldCntShow'] ?? '',
+                                    'seller' => $item['sellerName'] ?? ''
                                 ];
                             }
                         }
@@ -905,6 +1103,112 @@
             document.getElementById('loading').classList.add('show');
             document.getElementById('results').style.opacity = '0.5';
         });
+
+        // Current model filter
+        var currentModelFilter = null;
+
+        // Find Similar Products function
+        function findSimilarProducts(button) {
+            var modelKeywords = button.getAttribute('data-model');
+            var productName = button.getAttribute('data-name');
+
+            if (!modelKeywords) return;
+
+            currentModelFilter = modelKeywords.toLowerCase();
+
+            // Show model filter box
+            var filterBox = document.getElementById('modelFilterBox');
+            var filterName = document.getElementById('modelFilterName');
+            if (filterBox) filterBox.classList.add('show');
+            if (filterName) filterName.textContent = productName.substring(0, 60) + (productName.length > 60 ? '...' : '');
+
+            // Apply combined filters
+            applyAllFilters();
+
+            // Scroll to top of results
+            document.getElementById('modelFilterBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Clear model filter
+        function clearModelFilter() {
+            currentModelFilter = null;
+
+            var filterBox = document.getElementById('modelFilterBox');
+            if (filterBox) filterBox.classList.remove('show');
+
+            // Remove highlights
+            document.querySelectorAll('.product-card').forEach(function(card) {
+                card.classList.remove('highlighted');
+            });
+
+            // Reapply price filter only
+            applyAllFilters();
+        }
+
+        // Apply all filters (price + model)
+        function applyAllFilters() {
+            var minPrice = parseFloat(document.getElementById('priceMin')?.value) || 0;
+            var maxPrice = parseFloat(document.getElementById('priceMax')?.value) || Infinity;
+
+            var products = document.querySelectorAll('.product-card');
+            var visibleCount = 0;
+
+            products.forEach(function(card) {
+                var price = parseFloat(card.getAttribute('data-price'));
+                var model = (card.getAttribute('data-model') || '').toLowerCase();
+                var name = (card.getAttribute('data-name') || '').toLowerCase();
+
+                var priceMatch = price >= minPrice && price <= maxPrice;
+                var modelMatch = true;
+
+                if (currentModelFilter) {
+                    // Check if model keywords match
+                    var filterWords = currentModelFilter.split(/\s+/).filter(function(w) { return w.length > 2; });
+                    var matchCount = 0;
+
+                    filterWords.forEach(function(word) {
+                        if (model.indexOf(word) !== -1 || name.indexOf(word) !== -1) {
+                            matchCount++;
+                        }
+                    });
+
+                    // Require at least 50% of keywords to match, minimum 2
+                    var requiredMatches = Math.max(2, Math.floor(filterWords.length * 0.5));
+                    modelMatch = matchCount >= requiredMatches;
+
+                    // Highlight matching products
+                    if (modelMatch) {
+                        card.classList.add('highlighted');
+                    } else {
+                        card.classList.remove('highlighted');
+                    }
+                }
+
+                if (priceMatch && modelMatch) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Update counts
+            var visibleCountEl = document.getElementById('visibleCount');
+            var filteredCountEl = document.getElementById('filteredCount');
+            if (visibleCountEl) visibleCountEl.textContent = visibleCount;
+            if (filteredCountEl) filteredCountEl.style.display = 'inline';
+
+            // Show/hide no results message
+            var noResults = document.getElementById('noFilterResults');
+            var grid = document.getElementById('productsGrid');
+            if (visibleCount === 0) {
+                if (noResults) noResults.classList.add('show');
+                if (grid) grid.style.display = 'none';
+            } else {
+                if (noResults) noResults.classList.remove('show');
+                if (grid) grid.style.display = 'grid';
+            }
+        }
 
         // Range Slider functionality
         var rangeMin = document.getElementById('rangeMin');
@@ -1010,38 +1314,7 @@
         }
 
         function applyPriceFilter() {
-            var minPrice = parseFloat(document.getElementById('priceMin')?.value) || 0;
-            var maxPrice = parseFloat(document.getElementById('priceMax')?.value) || Infinity;
-
-            var products = document.querySelectorAll('.product-card');
-            var visibleCount = 0;
-
-            products.forEach(function(card) {
-                var price = parseFloat(card.getAttribute('data-price'));
-                if (price >= minPrice && price <= maxPrice) {
-                    card.classList.remove('hidden');
-                    visibleCount++;
-                } else {
-                    card.classList.add('hidden');
-                }
-            });
-
-            // Update counts
-            var visibleCountEl = document.getElementById('visibleCount');
-            var filteredCountEl = document.getElementById('filteredCount');
-            if (visibleCountEl) visibleCountEl.textContent = visibleCount;
-            if (filteredCountEl) filteredCountEl.style.display = 'inline';
-
-            // Show/hide no results message
-            var noResults = document.getElementById('noFilterResults');
-            var grid = document.getElementById('productsGrid');
-            if (visibleCount === 0) {
-                if (noResults) noResults.classList.add('show');
-                if (grid) grid.style.display = 'none';
-            } else {
-                if (noResults) noResults.classList.remove('show');
-                if (grid) grid.style.display = 'grid';
-            }
+            applyAllFilters();
         }
 
         function resetPriceFilter() {
@@ -1053,20 +1326,7 @@
             if (rangeMax) rangeMax.value = originalMaxPrice;
 
             updateSliderRange();
-
-            var products = document.querySelectorAll('.product-card');
-            products.forEach(function(card) {
-                card.classList.remove('hidden');
-            });
-
-            var filteredCountEl = document.getElementById('filteredCount');
-            if (filteredCountEl) filteredCountEl.style.display = 'none';
-
-            var noResults = document.getElementById('noFilterResults');
-            if (noResults) noResults.classList.remove('show');
-
-            var grid = document.getElementById('productsGrid');
-            if (grid) grid.style.display = 'grid';
+            applyAllFilters();
         }
     </script>
 </body>
